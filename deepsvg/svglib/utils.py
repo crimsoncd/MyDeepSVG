@@ -2,8 +2,6 @@ import deepsvg.svglib.svg as svg_lib
 from .geom import Bbox, Point
 import math
 import numpy as np
-import IPython.display as ipd
-from moviepy.editor import ImageClip, concatenate_videoclips, ipython_display
 
 
 def make_grid(svgs, num_cols=3, grid_width=24):
@@ -78,13 +76,20 @@ COLORS = ["aliceblue", "antiquewhite", "aqua", "aquamarine", "azure", "beige", "
 
 
 def to_gif(img_list, file_path=None, frame_duration=0.1, do_display=True):
+    from moviepy.editor import ImageClip, concatenate_videoclips
     clips = [ImageClip(np.array(img)).set_duration(frame_duration) for img in img_list]
 
     clip = concatenate_videoclips(clips, method="compose", bg_color=(255, 255, 255))
 
     if file_path is not None:
         clip.write_gif(file_path, fps=24, verbose=False, logger=None)
-
-    if do_display:
-        src = clip if file_path is None else file_path
-        ipd.display(ipython_display(src, fps=24, rd_kwargs=dict(logger=None), autoplay=1, loop=1))
+        if do_display:
+            import IPython.display as ipd
+            ipd.display(ipd.Image(filename=file_path))
+    elif do_display:
+        import tempfile
+        import IPython.display as ipd
+        tmp = tempfile.NamedTemporaryFile(suffix=".gif", delete=False)
+        tmp.close()
+        clip.write_gif(tmp.name, fps=24, verbose=False, logger=None)
+        ipd.display(ipd.Image(filename=tmp.name))

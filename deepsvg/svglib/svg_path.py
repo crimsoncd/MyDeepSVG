@@ -6,7 +6,6 @@ import torch
 from typing import List, Union
 from xml.dom import minidom
 import math
-import shapely.geometry
 import numpy as np
 
 from .geom import union_bbox
@@ -643,6 +642,7 @@ class SVGPath:
         return points
 
     def to_shapely(self):
+        import shapely.geometry
         polygon = shapely.geometry.Polygon(self.sample_points())
 
         if not polygon.is_valid:

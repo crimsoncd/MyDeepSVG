@@ -6,10 +6,6 @@ from typing import List, Union
 from xml.dom import minidom
 from .svg_path import SVGPath
 from .svg_command import SVGCommandLine, SVGCommandArc, SVGCommandBezier, SVGCommandClose
-import shapely
-import shapely.ops
-import shapely.geometry
-import networkx as nx
 
 
 FLOAT_RE = re.compile(r"[-+]?[0-9]*\.?[0-9]+(?:[eE][-+]?[0-9]+)?")
@@ -387,6 +383,7 @@ class SVGPathGroup(SVGPrimitive):
         return union_bbox([path.bbox() for path in self.svg_paths])
 
     def to_shapely(self):
+        import shapely.ops
         return shapely.ops.unary_union([path.to_shapely() for path in self.svg_paths])
 
     def compute_filling(self):
@@ -420,6 +417,7 @@ class SVGPathGroup(SVGPrimitive):
         return self
 
     def overlap_graph(self, threshold=0.9, draw=False):
+        import networkx as nx
         G = nx.DiGraph()
         shapes = [path.to_shapely() for path in self.svg_paths]
 

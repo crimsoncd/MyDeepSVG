@@ -3,15 +3,10 @@ from .geom import *
 from xml.dom import expatbuilder
 import torch
 from typing import List, Union
-import IPython.display as ipd
-import cairosvg
-from PIL import Image
 import io
 import os
-from moviepy.editor import ImageClip, concatenate_videoclips, ipython_display
 import math
 import random
-import networkx as nx
 
 Num = Union[int, float]
 
@@ -170,6 +165,7 @@ class SVG:
             f.write(self.to_str())
 
     def save_png(self, file_path):
+        import cairosvg
         cairosvg.svg2png(bytestring=self.to_str(), write_to=file_path)
 
     def draw(self, fill=False, file_path=None, do_display=True, return_png=False,
@@ -188,16 +184,20 @@ class SVG:
                               with_markers=with_markers, color_firstlast=color_firstlast, with_moves=with_moves)
 
         if do_display:
+            import IPython.display as ipd
             ipd.display(ipd.SVG(svg_str))
 
         if return_png:
+            from PIL import Image
             if file_path is None:
+                import cairosvg
                 img_data = cairosvg.svg2png(bytestring=svg_str)
                 return Image.open(io.BytesIO(img_data))
             else:
                 _, file_extension = os.path.splitext(file_path)
 
                 if file_extension == ".svg":
+                    import cairosvg
                     img_data = cairosvg.svg2png(url=file_path)
                     return Image.open(io.BytesIO(img_data))
                 else:
@@ -378,16 +378,23 @@ class SVG:
         return clips
 
     def animate(self, file_path=None, frame_duration=0.1, do_display=True):
+        from moviepy.editor import ImageClip, concatenate_videoclips
         clips = self.to_video(lambda img: ImageClip(img).set_duration(frame_duration))
 
         clip = concatenate_videoclips(clips, method="compose", bg_color=(255, 255, 255))
 
         if file_path is not None:
             clip.write_gif(file_path, fps=24, verbose=False, logger=None)
-
-        if do_display:
-            src = clip if file_path is None else file_path
-            ipd.display(ipython_display(src, fps=24, rd_kwargs=dict(logger=None), autoplay=1, loop=1))
+            if do_display:
+                import IPython.display as ipd
+                ipd.display(ipd.Image(filename=file_path))
+        elif do_display:
+            import tempfile
+            import IPython.display as ipd
+            tmp = tempfile.NamedTemporaryFile(suffix=".gif", delete=False)
+            tmp.close()
+            clip.write_gif(tmp.name, fps=24, verbose=False, logger=None)
+            ipd.display(ipd.Image(filename=tmp.name))
 
     def numericalize(self, n=256):
         self.normalize(viewbox=Bbox(n))
@@ -491,6 +498,7 @@ class SVG:
         return union_bbox([path_group.bbox() for path_group in self.svg_path_groups])
 
     def overlap_graph(self, threshold=0.95, draw=False):
+        import networkx as nx
         G = nx.DiGraph()
         shapes = [group.to_shapely() for group in self.svg_path_groups]
 
